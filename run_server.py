@@ -1,11 +1,11 @@
+import datetime
 import os
-from flask import Flask, render_template, url_for, request, session, redirect, send_from_directory
 from signal import signal, SIGPIPE, SIG_DFL
 
-from werkzeug.utils import secure_filename
-from flask_pymongo import PyMongo
 import bcrypt
-import datetime
+from flask import Flask, render_template, url_for, request, session, redirect, send_from_directory
+from flask_pymongo import PyMongo
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 
@@ -26,7 +26,37 @@ def index():
         books = mongo.db.documents
         count = books.count()
         booklist = range(0, count, 1)
+        subjects = mongo.db.subjects
+        subject_count = subjects.count()
+        sublist = range(1, subject_count + 1, 1)
+        subjinja = range(0, subject_count, 1)
+        subjects_dropdown = []
+
+        for x in sublist:
+            y = x
+            z = str(y)
+            subject_find = subjects.find_one({'sub_id': z})
+            subject_name = subject_find['subject']
+            subjects_dropdown.append(subject_name)
+
+        authors = mongo.db.authors
+        authors_count = authors.count()
+        authlist = range(1, authors_count + 1, 1)
+        authjinja = range(0, authors_count, 1)
+        authors_dropdown = []
+
+        for x in authlist:
+            y = x
+            z = str(y)
+            author_find = authors.find_one({'auth_id': z})
+            author_name = author_find['name']
+            authors_dropdown.append(author_name)
+
+        users = mongo.db.users
         user = session['username']
+        user_find = users.find_one({'name': user})
+        user_fullname = user_find['fullname']
+
         document_url = []
         book_title = []
         book_author = []
@@ -46,7 +76,11 @@ def index():
             book_edition.append(book_edi)
             book_sub = book_find['book_subject']
             book_subject.append(book_sub)
-        return render_template('home.html', book_title=book_title, book_author=book_author, document_url=document_url, booklist=booklist, book_edition = book_edition, book_subject=book_subject)
+        return render_template('home.html', book_title=book_title, book_author=book_author, document_url=document_url,
+                               booklist=booklist, book_edition=book_edition, book_subject=book_subject,
+                               user_fullname=user_fullname, sublist=sublist, subjects_dropdown=subjects_dropdown,
+                               subjinja=subjinja, authlist=authlist, authors_dropdown=authors_dropdown,
+                               authjinja=authjinja)
     return render_template('index.html')
 
 
@@ -114,6 +148,19 @@ def submit():
             subject_name = subject_find['subject']
             subjects_dropdown.append(subject_name)
 
+        authors = mongo.db.authors
+        authors_count = authors.count()
+        authlist = range(1, authors_count + 1, 1)
+        authjinja = range(0, authors_count, 1)
+        authors_dropdown = []
+
+        for x in authlist:
+            y = x
+            z = str(y)
+            author_find = authors.find_one({'auth_id': z})
+            author_name = author_find['name']
+            authors_dropdown.append(author_name)
+
         if request.method == 'POST':
             file = request.files['book_upload']
             if file and allowed_file(file.filename):
@@ -136,10 +183,18 @@ def submit():
                 sub_c_tot = sub_c_find.count()
                 sub_c = sub_c_tot + 1
                 sub_c_id = str(sub_c)
+                auth_c_find = books.find({'book_author': book_author})
+                auth_c_tot = auth_c_find.count()
+                auth_c = auth_c_tot + 1
+                auth_c_id = str(auth_c)
                 download_link = '/downloads/%s' % fname
-                books.insert({'book_title':book_title, 'filename':fname, 'book_author' : book_author, 'book_edition' : book_edition, 'type' : document_type, 'book_subject':subject_name, 'book_id':book_id, 'type_id':type_c_id, 'sub_id':sub_c_id, 'book_url':download_link})
+                books.insert({'book_title': book_title, 'filename': fname, 'book_author': book_author,
+                              'book_edition': book_edition, 'type': document_type, 'book_subject': subject_name,
+                              'book_id': book_id, 'type_id': type_c_id, 'sub_id': sub_c_id, 'book_url': download_link,
+                              'auth_id': auth_c_id})
 
-        return render_template('submit2.html', sublist=sublist, subjects_dropdown=subjects_dropdown, subjinja = subjinja)
+        return render_template('submit2.html', sublist=sublist, subjects_dropdown=subjects_dropdown, subjinja=subjinja,
+                               authlist=authlist, authors_dropdown=authors_dropdown, authjinja=authjinja)
     return 'Kindly login to perform this action'
 
 @app.route('/add_sub', methods=['POST', 'GET'])
@@ -163,19 +218,259 @@ def add_sub():
 
     return 'kindly login to perform this action'
 
+
+@app.route('/add_auth', methods=['POST', 'GET'])
+def add_auth():
+    if 'username' in session:
+
+        if request.method == 'POST':
+            authors = mongo.db.authors
+            count = authors.count()
+            new_author = request.form['name']
+            existing_author = authors.find_one({'name': new_author})
+            author_added = timestamp.strftime("%Y-%m-%d")
+            author_id = count + 1
+            auth_id = str(author_id)
+            if existing_author is None:
+                authors.insert({'name': new_author, 'date_added': author_added, 'auth_id': auth_id})
+
+        return render_template('addauthor.html')
+
+    return 'kindly login to perform this action'
+
 @app.route('/document/<book_id>')
 def document(book_id):
 
     books = mongo.db.documents
-    x = str(book_id)
-    doc_find = books.find_one({'book_id':x})
+    doc_find = books.find_one({'book_id': book_id})
     book_title = doc_find['book_title']
     book_author = doc_find['book_author']
     book_type = doc_find['type']
     book_subject = doc_find['book_subject']
     book_url = doc_find['book_url']
     book_edition = doc_find['book_edition']
-    return render_template('book.html', book_title=book_title, book_author=book_author, book_edition=book_edition,type=book_type, book_subject=book_subject, book_url=book_url)
+    subjects = mongo.db.subjects
+    subject_count = subjects.count()
+    sublist = range(1, subject_count + 1, 1)
+    subjinja = range(0, subject_count, 1)
+    subjects_dropdown = []
+
+    for x in sublist:
+        y = x
+        z = str(y)
+        subject_find = subjects.find_one({'sub_id': z})
+        subject_name = subject_find['subject']
+        subjects_dropdown.append(subject_name)
+
+    authors = mongo.db.authors
+    authors_count = authors.count()
+    authlist = range(1, authors_count + 1, 1)
+    authjinja = range(0, authors_count, 1)
+    authors_dropdown = []
+
+    for x in authlist:
+        y = x
+        z = str(y)
+        author_find = authors.find_one({'auth_id': z})
+        author_name = author_find['name']
+        authors_dropdown.append(author_name)
+
+    users = mongo.db.users
+    user = session['username']
+    user_find = users.find_one({'name': user})
+    user_fullname = user_find['fullname']
+    return render_template('book2.html', book_title=book_title, book_author=book_author, book_edition=book_edition,
+                           type=book_type, book_subject=book_subject, book_url=book_url, user_fullname=user_fullname,
+                           sublist=sublist, subjects_dropdown=subjects_dropdown, subjinja=subjinja, authlist=authlist,
+                           authors_dropdown=authors_dropdown, authjinja=authjinja)
+
+
+@app.route('/bysub/<subid>')
+def bysub(subid):
+    documents = mongo.db.documents
+    books_find = documents.find({'book_subject': subid})
+    count = books_find.count()
+    booklist = range(0, count, 1)
+    subjects = mongo.db.subjects
+    subject_count = subjects.count()
+    sublist = range(1, subject_count + 1, 1)
+    subjinja = range(0, subject_count, 1)
+    subjects_dropdown = []
+
+    for x in sublist:
+        y = x
+        z = str(y)
+        subject_find = subjects.find_one({'sub_id': z})
+        subject_name = subject_find['subject']
+        subjects_dropdown.append(subject_name)
+
+    authors = mongo.db.authors
+    authors_count = authors.count()
+    authlist = range(1, authors_count + 1, 1)
+    authjinja = range(0, authors_count, 1)
+    authors_dropdown = []
+
+    for x in authlist:
+        y = x
+        z = str(y)
+        author_find = authors.find_one({'auth_id': z})
+        author_name = author_find['name']
+        authors_dropdown.append(author_name)
+
+    users = mongo.db.users
+    user = session['username']
+    user_find = users.find_one({'name': user})
+    user_fullname = user_find['fullname']
+    document_url = []
+    book_title = []
+    book_author = []
+    book_edition = []
+    book_subject = []
+    for x in booklist:
+        y = x + 1
+        z = str(y)
+        book_find = documents.find_one({'sub_id': z, 'book_subject': subid})
+        book_id = book_find['book_id']
+        doc_url = '/document/%s' % book_id
+        document_url.append(doc_url)
+        book_auth = book_find['book_author']
+        book_author.append(book_auth)
+        book_titl = book_find['book_title']
+        book_title.append(book_titl)
+        book_edi = book_find['book_edition']
+        book_edition.append(book_edi)
+        book_sub = book_find['book_subject']
+        book_subject.append(book_sub)
+    return render_template('bysub.html', book_title=book_title, book_author=book_author, document_url=document_url,
+                           booklist=booklist, book_edition=book_edition, book_subject=book_subject,
+                           user_fullname=user_fullname, sublist=sublist, subjects_dropdown=subjects_dropdown,
+                           subjinja=subjinja, authlist=authlist, authors_dropdown=authors_dropdown, authjinja=authjinja)
+
+
+@app.route('/bytype/<typeid>')
+def bytype(typeid):
+    documents = mongo.db.documents
+    books_find = documents.find({'type': typeid})
+    count = books_find.count()
+    booklist = range(0, count, 1)
+    subjects = mongo.db.subjects
+    subject_count = subjects.count()
+    sublist = range(1, subject_count + 1, 1)
+    subjinja = range(0, subject_count, 1)
+    subjects_dropdown = []
+
+    for x in sublist:
+        y = x
+        z = str(y)
+        subject_find = subjects.find_one({'sub_id': z})
+        subject_name = subject_find['subject']
+        subjects_dropdown.append(subject_name)
+
+    authors = mongo.db.authors
+    authors_count = authors.count()
+    authlist = range(1, authors_count + 1, 1)
+    authjinja = range(0, authors_count, 1)
+    authors_dropdown = []
+
+    for x in authlist:
+        y = x
+        z = str(y)
+        author_find = authors.find_one({'auth_id': z})
+        author_name = author_find['name']
+        authors_dropdown.append(author_name)
+
+    users = mongo.db.users
+    user = session['username']
+    user_find = users.find_one({'name': user})
+    user_fullname = user_find['fullname']
+    document_url = []
+    book_title = []
+    book_author = []
+    book_edition = []
+    book_subject = []
+    for x in booklist:
+        y = x + 1
+        z = str(y)
+        book_find = documents.find_one({'type_id': z})
+        book_id = book_find['book_id']
+        doc_url = '/document/%s' % book_id
+        document_url.append(doc_url)
+        book_auth = book_find['book_author']
+        book_author.append(book_auth)
+        book_titl = book_find['book_title']
+        book_title.append(book_titl)
+        book_edi = book_find['book_edition']
+        book_edition.append(book_edi)
+        book_sub = book_find['book_subject']
+        book_subject.append(book_sub)
+
+    return render_template('bytype.html', book_title=book_title, book_author=book_author, document_url=document_url,
+                           booklist=booklist, book_edition=book_edition, book_subject=book_subject,
+                           user_fullname=user_fullname, sublist=sublist, subjects_dropdown=subjects_dropdown,
+                           subjinja=subjinja, authlist=authlist, authors_dropdown=authors_dropdown, authjinja=authjinja)
+
+
+@app.route('/byauth/<auth>')
+def byauth(auth):
+    documents = mongo.db.documents
+    books_find = documents.find({'book_author': auth})
+    count = books_find.count()
+    booklist = range(0, count, 1)
+    subjects = mongo.db.subjects
+    subject_count = subjects.count()
+    sublist = range(1, subject_count + 1, 1)
+    subjinja = range(0, subject_count, 1)
+    subjects_dropdown = []
+
+    for x in sublist:
+        y = x
+        z = str(y)
+        subject_find = subjects.find_one({'sub_id': z})
+        subject_name = subject_find['subject']
+        subjects_dropdown.append(subject_name)
+
+    authors = mongo.db.authors
+    authors_count = authors.count()
+    authlist = range(1, authors_count + 1, 1)
+    authjinja = range(0, authors_count, 1)
+    authors_dropdown = []
+
+    for x in authlist:
+        y = x
+        z = str(y)
+        author_find = authors.find_one({'auth_id': z})
+        author_name = author_find['name']
+        authors_dropdown.append(author_name)
+
+    users = mongo.db.users
+    user = session['username']
+    user_find = users.find_one({'name': user})
+    user_fullname = user_find['fullname']
+    document_url = []
+    book_title = []
+    book_author = []
+    book_edition = []
+    book_subject = []
+    for x in booklist:
+        y = x + 1
+        z = str(y)
+        book_find = documents.find_one({'auth_id': z, 'book_author': auth})
+        book_id = book_find['book_id']
+        doc_url = '/document/%s' % book_id
+        document_url.append(doc_url)
+        book_auth = book_find['book_author']
+        book_author.append(book_auth)
+        book_titl = book_find['book_title']
+        book_title.append(book_titl)
+        book_edi = book_find['book_edition']
+        book_edition.append(book_edi)
+        book_sub = book_find['book_subject']
+        book_subject.append(book_sub)
+
+    return render_template('byauth.html', book_title=book_title, book_author=book_author, document_url=document_url,
+                           booklist=booklist, book_edition=book_edition, book_subject=book_subject,
+                           user_fullname=user_fullname, sublist=sublist, subjects_dropdown=subjects_dropdown,
+                           subjinja=subjinja, authlist=authlist, authors_dropdown=authors_dropdown, authjinja=authjinja)
 
 @app.route('/downloads/<filename>')
 def downloads(filename):
@@ -184,4 +479,4 @@ def downloads(filename):
 
 if __name__ == '__main__':
     app.secret_key = 'mysecret'
-    app.run(debug=True, host ='0.0.0.0',port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5000, passthrough_errors=False)
