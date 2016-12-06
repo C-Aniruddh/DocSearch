@@ -27,6 +27,37 @@ mongo = PyMongo(app)
 @app.route('/')
 def index():
     if 'username' in session:
+        users = mongo.db.users
+        user = session['username']
+        user_find = users.find_one({'name': user})
+        user_fullname = user_find['fullname']
+        book_titles = []
+
+        books = mongo.db.documents
+        count = books.count()
+        titlerange = range(0, count - 1, 1)
+        find_books = books.find({}, {'book_title': True, '_id': False})
+
+        for titles in find_books:
+            titl = str(titles['book_title'].encode('utf-8'))
+            string = '"%s" : null' % titl
+            book_titles.append(string)
+
+        totalcount = count - 1
+
+        if request.method == 'POST':
+            search_query = request.form['search_query']
+            querystr = '/query/%s' % search_query
+            return redirect(querystr)
+        return render_template('home.html', user_fullname=user_fullname, book_titles=book_titles,
+                               titlerange=titlerange, totalcount=totalcount)
+
+    return render_template('index.html')
+
+
+@app.route('/explore', methods=['POST', 'GET'])
+def explore():
+    if 'username' in session:
         books = mongo.db.documents
         count = books.count()
         booklist = range(0, count, 1)
@@ -93,14 +124,14 @@ def index():
             book_edition.append(book_edi)
             book_sub = book_find['book_subject']
             book_subject.append(book_sub)
-        return render_template('home.html', book_title=book_title, book_author=book_author, document_url=document_url,
+        return render_template('explore.html', book_title=book_title, book_author=book_author,
+                               document_url=document_url,
                                booklist=booklist, book_edition=book_edition, book_subject=book_subject,
                                user_fullname=user_fullname, sublist=sublist, subjects_dropdown=subjects_dropdown,
                                subjinja=subjinja, authlist=authlist, authors_dropdown=authors_dropdown,
                                authjinja=authjinja, book_titles=book_titles, titlerange=titlerange,
                                totalcount=totalcount)
-    return render_template('index.html')
-
+    return 'Kindly login to view this page'
 
 @app.route('/userlogin', methods=['POST', 'GET'])
 def userlogin():

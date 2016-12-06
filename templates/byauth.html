@@ -3,7 +3,7 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0"/>
-    <title>Books | Sort: By Type</title>
+    <title>Books | Sort: By Author</title>
 
     <!-- CSS  -->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -43,13 +43,13 @@
     <div class="nav-wrapper container">
         <a id="logo-container" href="/" class="brand-logo">Books</a>
         <ul class="right hide-on-med-and-down">
-            <li><a class="dropdown-button" href="#!" data-activates="add_section"><i class="material-icons">add</i></a>
+            <li><a class="dropdown-button" href="#!" data-activates="add_section"><i class="material-icons left">add</i>Add</a>
             </li>
-            <li><a href="/search"><i class="material-icons">search</i></a></li>
+            <li><a href="/search"><i class="material-icons left">search</i>Search</a></li>
             <li><a class="dropdown-button" href="#!" data-activates="authsort_section">Sort: By Author</a></li>
             <li><a class="dropdown-button" href="#!" data-activates="subsort_section">Sort: By Subject</a></li>
             <li><a class="dropdown-button" href="#!" data-activates="typesort_section">Sort: By Type</a></li>
-            <li><a class="dropdown-button" href="#!" data-activates="user_section">{{ user_fullname }}<i
+            <li><a class="dropdown-button" href="#!" data-activates="user_section"><i class="material-icons left">account_circle</i>{{ user_fullname }}<i
                     class="material-icons right">arrow_drop_down</i></a></li>
         </ul>
     </div>
