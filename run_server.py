@@ -1,8 +1,11 @@
 import datetime
+import json
 import os
+import time
 from signal import signal, SIGPIPE, SIG_DFL
 
 import bcrypt
+from bson import json_util
 from flask import Flask, render_template, url_for, request, session, redirect, send_from_directory
 from flask_pymongo import PyMongo
 from werkzeug.utils import secure_filename
@@ -14,11 +17,12 @@ timestamp = datetime.datetime.now()
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(APP_ROOT, 'static/uploads')
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
-signal(SIGPIPE,SIG_DFL)
+signal(SIGPIPE, SIG_DFL)
 app.config['MONGO_DBNAME'] = 'aniruddh'
 app.config['MONGO_URI'] = 'mongodb://flaskmongo:flask@ds157187.mlab.com:57187/aniruddh'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 mongo = PyMongo(app)
+
 
 @app.route('/')
 def index():
@@ -84,29 +88,33 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/userlogin', methods=['POST','GET'])
+@app.route('/userlogin', methods=['POST', 'GET'])
 def userlogin():
     if 'username' in session:
         return redirect('/home')
 
     return render_template('login.html')
 
+
 @app.route('/login', methods=['POST'])
 def login():
     users = mongo.db.users
-    login_user = users.find_one({'name' : request.form['username']})
+    login_user = users.find_one({'name': request.form['username']})
 
     if login_user:
-        if bcrypt.hashpw(request.form['pass'].encode('utf-8'), login_user['password'].encode('utf-8')) == login_user['password'].encode('utf-8'):
+        if bcrypt.hashpw(request.form['pass'].encode('utf-8'), login_user['password'].encode('utf-8')) == login_user[
+            'password'].encode('utf-8'):
             session['username'] = request.form['username']
             return redirect(url_for('index'))
 
     return 'Invalid username/password combination'
 
+
 @app.route('/logout')
 def logout():
     session.pop('username', None)
     return redirect('/')
+
 
 @app.route('/register', methods=['POST', 'GET'])
 def register():
@@ -116,20 +124,23 @@ def register():
         users = mongo.db.users
         user_fname = request.form['name']
         user_email = request.form['email']
-        existing_user = users.find_one({'name' : request.form['username'], 'email' : user_email})
+        existing_user = users.find_one({'name': request.form['username'], 'email': user_email})
         if existing_user is None:
             hashpass = bcrypt.hashpw(request.form['pass'].encode('utf-8'), bcrypt.gensalt())
-            users.insert({'fullname': user_fname, 'email': user_email, 'name' : request.form['username'], 'password' : hashpass})
+            users.insert(
+                {'fullname': user_fname, 'email': user_email, 'name': request.form['username'], 'password': hashpass})
             session['username'] = request.form['username']
             return redirect(url_for('index'))
-        
+
         return 'A user with that Email id/username already exists'
 
     return render_template('register.html')
 
+
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
+
 
 @app.route('/submit', methods=['POST', 'GET'])
 def submit():
@@ -144,7 +155,7 @@ def submit():
         for x in sublist:
             y = x
             z = str(y)
-            subject_find = subjects.find_one({'sub_id' : z})
+            subject_find = subjects.find_one({'sub_id': z})
             subject_name = subject_find['subject']
             subjects_dropdown.append(subject_name)
 
@@ -166,20 +177,20 @@ def submit():
             if file and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
                 file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                fname=filename
-                book_title=request.form['book_title']
-                book_author=request.form['book_author']
-                book_edition=request.form['book_edition']
-                document_type=request.form['document_type']
-                subject_name=request.form['subject_name']
+                fname = filename
+                book_title = request.form['book_title']
+                book_author = request.form['book_author']
+                book_edition = request.form['book_edition']
+                document_type = request.form['document_type']
+                subject_name = request.form['subject_name']
                 book_c_tot = books.count()
                 book_c = book_c_tot + 1
                 book_id = str(book_c)
-                type_c_find = books.find({'type' : document_type})
+                type_c_find = books.find({'type': document_type})
                 type_c_tot = type_c_find.count()
                 type_c = type_c_tot + 1
                 type_c_id = str(type_c)
-                sub_c_find = books.find({'book_subject' : subject_name})
+                sub_c_find = books.find({'book_subject': subject_name})
                 sub_c_tot = sub_c_find.count()
                 sub_c = sub_c_tot + 1
                 sub_c_id = str(sub_c)
@@ -197,22 +208,24 @@ def submit():
                                authlist=authlist, authors_dropdown=authors_dropdown, authjinja=authjinja)
     return 'Kindly login to perform this action'
 
+
 @app.route('/add_sub', methods=['POST', 'GET'])
 def add_sub():
     if 'username' in session:
 
         if request.method == 'POST':
-            subjects=mongo.db.subjects
+            subjects = mongo.db.subjects
             count = subjects.count()
             new_subject = request.form['subject']
-            existing_subject = subjects.find_one({'subject' : new_subject})
+            existing_subject = subjects.find_one({'subject': new_subject})
             subject_added = timestamp.strftime("%Y-%m-%d")
             subject_id = count + 1
             subject_value = subject_id - 1
             subval = str(subject_value)
             subid = str(subject_id)
             if existing_subject is None:
-                subjects.insert({'subject' : new_subject, 'date_added': subject_added, 'sub_id' : subid, 'subject_value' : subval})
+                subjects.insert(
+                    {'subject': new_subject, 'date_added': subject_added, 'sub_id': subid, 'subject_value': subval})
 
         return render_template('addsubject.html')
 
@@ -238,9 +251,9 @@ def add_auth():
 
     return 'kindly login to perform this action'
 
+
 @app.route('/document/<book_id>')
 def document(book_id):
-
     books = mongo.db.documents
     doc_find = books.find_one({'book_id': book_id})
     book_title = doc_find['book_title']
@@ -249,40 +262,14 @@ def document(book_id):
     book_subject = doc_find['book_subject']
     book_url = doc_find['book_url']
     book_edition = doc_find['book_edition']
-    subjects = mongo.db.subjects
-    subject_count = subjects.count()
-    sublist = range(1, subject_count + 1, 1)
-    subjinja = range(0, subject_count, 1)
-    subjects_dropdown = []
 
-    for x in sublist:
-        y = x
-        z = str(y)
-        subject_find = subjects.find_one({'sub_id': z})
-        subject_name = subject_find['subject']
-        subjects_dropdown.append(subject_name)
-
-    authors = mongo.db.authors
-    authors_count = authors.count()
-    authlist = range(1, authors_count + 1, 1)
-    authjinja = range(0, authors_count, 1)
-    authors_dropdown = []
-
-    for x in authlist:
-        y = x
-        z = str(y)
-        author_find = authors.find_one({'auth_id': z})
-        author_name = author_find['name']
-        authors_dropdown.append(author_name)
 
     users = mongo.db.users
     user = session['username']
     user_find = users.find_one({'name': user})
     user_fullname = user_find['fullname']
     return render_template('book2.html', book_title=book_title, book_author=book_author, book_edition=book_edition,
-                           type=book_type, book_subject=book_subject, book_url=book_url, user_fullname=user_fullname,
-                           sublist=sublist, subjects_dropdown=subjects_dropdown, subjinja=subjinja, authlist=authlist,
-                           authors_dropdown=authors_dropdown, authjinja=authjinja)
+                           type=book_type, book_subject=book_subject, book_url=book_url, user_fullname=user_fullname)
 
 
 @app.route('/bysub/<subid>')
@@ -326,6 +313,7 @@ def bysub(subid):
     book_author = []
     book_edition = []
     book_subject = []
+
     for x in booklist:
         y = x + 1
         z = str(y)
@@ -388,6 +376,7 @@ def bytype(typeid):
     book_author = []
     book_edition = []
     book_subject = []
+
     for x in booklist:
         y = x + 1
         z = str(y)
@@ -451,6 +440,7 @@ def byauth(auth):
     book_author = []
     book_edition = []
     book_subject = []
+
     for x in booklist:
         y = x + 1
         z = str(y)
@@ -472,10 +462,97 @@ def byauth(auth):
                            user_fullname=user_fullname, sublist=sublist, subjects_dropdown=subjects_dropdown,
                            subjinja=subjinja, authlist=authlist, authors_dropdown=authors_dropdown, authjinja=authjinja)
 
+
+@app.route('/search', methods=['POST', 'GET'])
+def search():
+    if request.method == 'POST':
+        search_query = request.form['search_query']
+        querystr = '/query/%s' % search_query
+        return redirect(querystr)
+    return render_template('search.html')
+
+
+def toJson(data):
+    return json.dumps(data, default=json_util.default)
+
+
+@app.route('/query/<search_query>', methods=['POST', 'GET'])
+def query(search_query):
+    books = mongo.db.documents
+    find_books = books.find({'book_title': {"$regex": search_query}})
+    tot_count = find_books.count()
+    booklist = range(0, tot_count, 1)
+    document_url = []
+    book_title = []
+    book_author = []
+    book_edition = []
+    book_subject = []
+    book_ids = []
+
+    users = mongo.db.users
+    user = session['username']
+    user_find = users.find_one({'name': user})
+    user_fullname = user_find['fullname']
+
+    """
+    Basic Goal is to make a list, sort the data and then fill the data from a cursor to a list by converting the
+    cursor object to a dict object
+
+    Code for reference :
+
+    results = []
+    find_book_res = books.find({'book_title': {"$regex": search_query}}, {'book_author': True, '_id': False})
+    for author in find_book_res:
+        text = str(author['book_author'].encode('utf-8'))
+        results.append(text)"""
+    start_time = time.time()
+    find_book_author = books.find({'book_title': {"$regex": search_query}}, {'book_author': True, '_id': False})
+    for author in find_book_author:
+        auth = str(author['book_author'].encode('utf-8'))
+        book_author.append(auth)
+
+    find_book_title = books.find({'book_title': {"$regex": search_query}}, {'book_title': True, '_id': False})
+    for title in find_book_title:
+        titl = str(title['book_title'].encode('utf-8'))
+        book_title.append(titl)
+
+    find_book_id = books.find({'book_title': {"$regex": search_query}}, {'book_id': True, '_id': False})
+    for identity in find_book_id:
+        iden = str(identity['book_id'].encode('utf-8'))
+        book_ids.append(iden)
+
+    find_book_edition = books.find({'book_title': {"$regex": search_query}}, {'book_edition': True, '_id': False})
+    for edition in find_book_edition:
+        edi = str(edition['book_edition'].encode('utf-8'))
+        book_edition.append(edi)
+
+    find_book_subject = books.find({'book_title': {"$regex": search_query}}, {'book_subject': True, '_id': False})
+    for subject in find_book_subject:
+        subj = str(subject['book_subject'].encode('utf-8'))
+        book_subject.append(subj)
+
+    for x in booklist:
+        id = book_ids[x]
+        doc_url = '/document/%s' % id
+        document_url.append(doc_url)
+
+    time_taken = '%s seconds' % (time.time() - start_time)
+
+    if request.method == 'POST':
+        searchq = request.form['searchq']
+        querystr = '/query/%s' % searchq
+        return redirect(querystr)
+
+    return render_template('query.html', search_query=search_query, booklist=booklist, book_title=book_title,
+                           book_subject=book_subject, book_edition=book_edition, book_author=book_author,
+                           document_url=document_url, user_fullname=user_fullname, time_taken=time_taken)
+
+
 @app.route('/downloads/<filename>')
 def downloads(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'],
                                filename)
+
 
 if __name__ == '__main__':
     app.secret_key = 'mysecret'
