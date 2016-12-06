@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0"/>
+    <title>Search - {{ search_query }}</title>
+
+    <!-- CSS  -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="../static/css/materialize.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+    <link href="../static/css/style.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.3/js/materialize.min.js"></script>
+    <script src="../static/js/materialize.js"></script>
+    <script src="../static/js/init.js"></script>
+</head>
+<body>
+
+<ul id="user_section" class="dropdown-content">
+    <li><a href="/profile">Profile</a></li>
+    <li><a href="/user_prefs">Settings</a></li>
+    <li class="divider"></li>
+    <li><a href="/logout">Logout</a></li>
+</ul>
+<ul id="add_section" class="dropdown-content">
+    <li><a href="/submit">Book</a></li>
+    <li><a href="/add_sub">Subject</a></li>
+    <li><a href="/add_auth">Author</a></li>
+</ul>
+
+<nav class="blue-grey lighten-1" role="navigation">
+    <div class="nav-wrapper container">
+        <a id="logo-container" href="/" class="brand-logo">Books</a>
+        <ul class="right hide-on-med-and-down">
+            <li><a class="dropdown-button" href="#!" data-activates="add_section"><i class="material-icons">add</i></a>
+            </li>
+
+            <li><a class="dropdown-button" href="#!" data-activates="user_section">{{ user_fullname }}<i
+                    class="material-icons right">arrow_drop_down</i></a></li>
+        </ul>
+    </div>
+</nav>
+<div class="section no-pad-bot" id="index-banner">
+    <div class="container">
+        <br><br>
+        <form class="form" method=POST action="{{ url_for('search') }}" role="form" enctype="multipart/form-data">
+            <div class="row">
+                <div class="input-field col s10 left">
+                    <input type="text" id="search_ac" autocomplete="off" value="{{ search_query }}" name="search_query"
+                           class="autocomplete">
+                    <label for="search_ac">Search Query</label>
+                </div>
+                <div class="input-field col s1">
+                    <button class="btn waves-effect waves-light" type="submit" name="action">
+                        Search
+                    </button>
+                </div>
+            </div>
+        </form>
+        <div class="row">
+            <div class="col s12">
+                <div class="card blue-grey darken-1">
+                    <div class="card-content white-text">
+                        <p>Time taken for search : {{ time_taken }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            {% for x in booklist %}
+                <div class="col s12">
+                    <div class="card">
+                        <div class="card-content">
+                            <span class="card-title">{{ book_title[x] }}</span>
+                            <p>Book Author : {{ book_author[x] }}<br>Book Edition : {{ book_edition[x] }}<br>Subject
+                                : {{ book_subject[x] }}
+                            </p>
+                        </div>
+                        <div class="card-action">
+                            <a href="{{ document_url[x] }}">More Info</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <br><br>
+
+    </div>
+</div>
+
+
+<div class="container">
+    <div class="section">
+
+    </div>
+    <br><br>
+
+    <div class="section">
+    </div>
+</div>
+
+<footer class="page-footer blue-grey">
+    <div class="container">
+        <div class="row">
+            <div class="col l6 s12">
+                <h5 class="white-text">About</h5>
+                <p class="grey-text text-lighten-4">A Document Management System designed to sort the documents on the
+                    basis of key characteristics of books.</p>
+            </div>
+        </div>
+    </div>
+    <div class="footer-copyright">
+        <div class="container">
+            Made by <a class="blue-grey-text text-lighten-3" href="http://achandratre.me">Aniruddh Chandratre</a>
+        </div>
+    </div>
+</footer>
+<script>
+    $(document).ready(function () {
+        $('input.autocomplete').autocomplete({
+            data: {
+            {% for x in titlerange %}
+                {{book_titles[x] | safe}},
+            {% endfor %}
+            {{book_titles[totalcount] | safe}}
+        }
+    })
+    });
+</script>
+</body>
+</html>
