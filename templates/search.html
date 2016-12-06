@@ -29,7 +29,7 @@
     <li><a href="/add_auth">Author</a></li>
 </ul>
 
-<nav class="blue-grey lighten-1" role="navigation">
+<nav class="blue-grey darken-3" role="navigation">
     <div class="nav-wrapper container">
         <a id="logo-container" href="/" class="brand-logo">Books</a>
         <ul class="right hide-on-med-and-down">
@@ -51,7 +51,9 @@
         <div class="row">
             <form class="form" method=POST action="{{ url_for('search') }}" role="form" enctype="multipart/form-data">
                 <div class="row">
-                    <div class="input-field col s11 left">
+                    <div class="input-field col s1 left">
+                    </div>
+                    <div class="input-field col s8 left">
                         <input type="text" id="search_ac" autocomplete="off" placeholder="Digital Electronics"
                                name="search_query" class="autocomplete">
                         <label for="search_ac">Search Query</label>

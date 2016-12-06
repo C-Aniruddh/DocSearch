@@ -1,9 +1,7 @@
-from flask import Flask, render_template
-from flask_material import Material
 from flask_wtf import Form, RecaptchaField
 from flask_wtf.file import FileField
-from wtforms import TextField, HiddenField, ValidationError, RadioField,\
-    BooleanField, SubmitField, IntegerField, FormField, validators
+from wtforms import TextField, HiddenField, ValidationError, RadioField, \
+    BooleanField, SubmitField
 from wtforms.validators import Required
 
 class ExampleForm(Form):
