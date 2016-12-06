@@ -465,12 +465,18 @@ def byauth(auth):
 
 @app.route('/search', methods=['POST', 'GET'])
 def search():
-    if request.method == 'POST':
-        search_query = request.form['search_query']
-        querystr = '/query/%s' % search_query
-        return redirect(querystr)
-    return render_template('search.html')
-
+    if 'username' in session:
+        users = mongo.db.users
+        user = session['username']
+        user_find = users.find_one({'name': user})
+        user_fullname = user_find['fullname']
+        if request.method == 'POST':
+            search_query = request.form['search_query']
+            querystr = '/query/%s' % search_query
+            return redirect(querystr)
+        return render_template('search.html', user_fullname=user_fullname)
+    
+    return 'You need to be logged in to perform search'
 
 def toJson(data):
     return json.dumps(data, default=json_util.default)
