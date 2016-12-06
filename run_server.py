@@ -30,6 +30,19 @@ def index():
         books = mongo.db.documents
         count = books.count()
         booklist = range(0, count, 1)
+
+        book_titles = []
+
+        titlerange = range(0, count - 1, 1)
+        find_books = books.find({}, {'book_title': True, '_id': False})
+
+        for titles in find_books:
+            titl = str(titles['book_title'].encode('utf-8'))
+            string = '"%s" : null' % titl
+            book_titles.append(string)
+
+        totalcount = count - 1
+
         subjects = mongo.db.subjects
         subject_count = subjects.count()
         sublist = range(1, subject_count + 1, 1)
@@ -84,7 +97,8 @@ def index():
                                booklist=booklist, book_edition=book_edition, book_subject=book_subject,
                                user_fullname=user_fullname, sublist=sublist, subjects_dropdown=subjects_dropdown,
                                subjinja=subjinja, authlist=authlist, authors_dropdown=authors_dropdown,
-                               authjinja=authjinja)
+                               authjinja=authjinja, book_titles=book_titles, titlerange=titlerange,
+                               totalcount=totalcount)
     return render_template('index.html')
 
 
@@ -463,6 +477,10 @@ def byauth(auth):
                            subjinja=subjinja, authlist=authlist, authors_dropdown=authors_dropdown, authjinja=authjinja)
 
 
+def toJson(data):
+    return json.dumps(data, default=json_util.default)
+
+
 @app.route('/search', methods=['POST', 'GET'])
 def search():
     if 'username' in session:
@@ -470,22 +488,48 @@ def search():
         user = session['username']
         user_find = users.find_one({'name': user})
         user_fullname = user_find['fullname']
+        book_titles = []
+
+        books = mongo.db.documents
+        count = books.count()
+        titlerange = range(0, count - 1, 1)
+        find_books = books.find({}, {'book_title': True, '_id': False})
+
+        for titles in find_books:
+            titl = str(titles['book_title'].encode('utf-8'))
+            string = '"%s" : null' % titl
+            book_titles.append(string)
+
+        totalcount = count - 1
+
         if request.method == 'POST':
             search_query = request.form['search_query']
             querystr = '/query/%s' % search_query
             return redirect(querystr)
-        return render_template('search.html', user_fullname=user_fullname)
-    
-    return 'You need to be logged in to perform search'
+        return render_template('search.html', user_fullname=user_fullname, book_titles=book_titles,
+                               titlerange=titlerange, totalcount=totalcount)
 
-def toJson(data):
-    return json.dumps(data, default=json_util.default)
+    return 'You need to be logged in to perform search'
 
 
 @app.route('/query/<search_query>', methods=['POST', 'GET'])
 def query(search_query):
     books = mongo.db.documents
     find_books = books.find({'book_title': {"$regex": search_query}})
+
+    count = books.count()
+    titlerange = range(0, count - 1, 1)
+    find_books_pred = books.find({}, {'book_title': True, '_id': False})
+
+    book_titles = []
+
+    for titles in find_books_pred:
+        titl = str(titles['book_title'].encode('utf-8'))
+        string = '"%s" : null' % titl
+        book_titles.append(string)
+
+    totalcount = count - 1
+
     tot_count = find_books.count()
     booklist = range(0, tot_count, 1)
     document_url = []
@@ -551,7 +595,8 @@ def query(search_query):
 
     return render_template('query.html', search_query=search_query, booklist=booklist, book_title=book_title,
                            book_subject=book_subject, book_edition=book_edition, book_author=book_author,
-                           document_url=document_url, user_fullname=user_fullname, time_taken=time_taken)
+                           document_url=document_url, user_fullname=user_fullname, time_taken=time_taken,
+                           book_titles=book_titles, titlerange=titlerange, totalcount=totalcount)
 
 
 @app.route('/downloads/<filename>')

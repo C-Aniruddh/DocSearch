@@ -11,6 +11,8 @@
   <link href="static/css/style.css" type="text/css" rel="stylesheet" media="screen,projection"/>
     <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.3/js/materialize.min.js"></script>
+    <script src="static/js/materialize.js"></script>
+    <script src="static/js/init.js"></script>
 </head>
 <body>
 
@@ -59,9 +61,9 @@
         <form class="form" method=POST action="{{ url_for('search') }}" role="form" enctype="multipart/form-data">
             <div class="row">
                 <div class="input-field col s11 left">
-                    <input id="user_prefix" type="text" placeholder="Search for books" name="search_query"
-                           class="validate">
-                    <label for="user_prefix">Search Query</label>
+                    <input type="text" id="search_ac" autocomplete="off" placeholder="Search for books"
+                           name="search_query" class="autocomplete">
+                    <label for="search_ac">Search Query</label>
                 </div>
                 <div class="input-field col s1 right">
                     <button class="btn waves-effect waves-light" type="submit" name="action">
@@ -120,9 +122,18 @@
     </div>
   </footer>
 
-
-  <!--  Scripts-->
-  <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $('input.autocomplete').autocomplete({
+            data: {
+            {% for x in titlerange %}
+                {{book_titles[x] | safe}},
+            {% endfor %}
+            {{book_titles[totalcount] | safe}}
+        }
+    })
+    });
+</script>
 
   </body>
 </html>
