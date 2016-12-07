@@ -18,7 +18,7 @@
 
 <ul id="user_section" class="dropdown-content">
     <li><a href="/profile">Profile</a></li>
-    <li><a href="/user_prefs">Settings</a></li>
+    <li><a href="/preferences">Settings</a></li>
     <li class="divider"></li>
     <li><a href="/logout">Logout</a></li>
 </ul>
@@ -29,7 +29,7 @@
 </ul>
 <ul id="typesort_section" class="dropdown-content">
     <li><a href="/bytype/1">PDF</a></li>
-    <li><a href="/bytype/2">Scanned</a></li>
+    <li><a href="/bytype/0">Scanned</a></li>
 </ul>
 <ul id="authsort_section" class="dropdown-content">
     {% for x in authjinja %}
@@ -76,6 +76,7 @@
                 </div>
             </div>
         </form>
+
         <div class="row">
                 <div class="col s12">
                     <ul class="collapsible popout" data-collapsible="accordion">
@@ -117,11 +118,15 @@
                     basis
                     of key characteristics of books.</p>
             </div>
+            <div class="col s6">
+                <p class="grey-text text-light-4">Time taken to load this page : {{ total_time }}</p>
+            </div>
         </div>
     </div>
     <div class="footer-copyright">
         <div class="container">
             Made by <a class="blue-grey-text text-lighten-3" href="http://achandratre.me">Aniruddh Chandratre</a>
+
         </div>
     </div>
 </footer>

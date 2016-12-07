@@ -19,7 +19,7 @@
 
 <ul id="user_section" class="dropdown-content">
     <li><a href="/profile">Profile</a></li>
-    <li><a href="/user_prefs">Settings</a></li>
+    <li><a href="/preferences">Settings</a></li>
     <li class="divider"></li>
     <li><a href="/logout">Logout</a></li>
 </ul>
@@ -46,7 +46,6 @@
         <br><br>
         <h1 class="header center blue-grey-text">Books</h1>
         <h6 class="header center blue-grey-text">Predictive Search Field</h6>
-        <p>{{ titles_json }}</p>
         <br><br>
         <div class="row">
             <form class="form" method=POST action="{{ url_for('search') }}" role="form" enctype="multipart/form-data">

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0"/>
+    <title>Books Home</title>
+
+    <!-- CSS  -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="../static/css/materialize.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+    <link href="../static/css/style.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.3/js/materialize.min.js"></script>
+    <script src="../static/js/materialize.js"></script>
+    <script src="../static/js/init.js"></script>
+
+</head>
+<body>
+
+<ul id="user_section" class="dropdown-content">
+    <li><a href="/profile">Profile</a></li>
+    <li><a href="/preferences">Settings</a></li>
+    <li class="divider"></li>
+    <li><a href="/logout">Logout</a></li>
+</ul>
+<ul id="add_section" class="dropdown-content">
+    <li><a href="/submit">Book</a></li>
+    <li><a href="/add_sub">Subject</a></li>
+    <li><a href="/add_auth">Author</a></li>
+</ul>
+
+<nav class="blue-grey darken-3 lighten-1" role="navigation">
+    <div class="nav-wrapper container">
+        <a id="logo-container" href="/" class="brand-logo">Books</a>
+        <ul class="right hide-on-med-and-down">
+            <li><a class="dropdown-button" href="#!" data-activates="add_section"><i class="material-icons left">add</i>Add</a>
+            </li>
+            <li><a href="/explore"><i class="material-icons left">view_module</i>Explore</a></a></li>
+            <li><a class="dropdown-button" href="#!" data-activates="user_section"><i class="material-icons left">account_circle</i>{{ user_fullname }}<i
+                    class="material-icons right">arrow_drop_down</i></a></li>
+        </ul>
+    </div>
+</nav>
+<div class="section no-pad-bot" id="index-banner">
+    <div class="container">
+        <br><br>
+        <h2 class="header center blue-grey-text">Preferences</h2>
+        <br><br>
+        <div class="row">
+            <div class="col s3">
+            </div>
+            <div class="col s6">
+                <div class="card col s12">
+                    <div class="card-content">
+                        <div class="row">
+                            <form class="col s12" method=POST action="{{ url_for('preferences') }}">
+                                <div class="row">
+                                    <div class="input-field col s12">
+                                        <input value="{{ user_fullname }}" id="first_name" type="text" class="validate">
+                                        <label for="first_name">First Name</label>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="input-field col s12">
+                                            <input disabled value="{{ user_email }}" id="disabled" type="text"
+                                                   class="validate">
+                                            <label for="disabled">Email ID:</label>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="input-field col s12">
+                                            <input id="password" type="password" placeholder="password"
+                                                   name="current_password" class="validate">
+                                            <label for="password">Current Password</label>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="input-field col s12">
+                                            <input id="password" type="password" name="new_password"
+                                                   placeholder="password" class="validate">
+                                            <label for="password">New Password</label>
+                                        </div>
+                                    </div>
+                                    <div class="input-field col s12 center">
+                                        <button class="btn waves-effect waves-light" type="submit" name="action">
+                                            Update
+                                            <i class="mdi-content-send right"></i>
+                                        </button>
+                                    </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <br><br>
+
+    </div>
+</div>
+<footer class="page-footer blue-grey darken-3">
+    <div class="container">
+        <div class="row">
+            <div class="col l6 s12">
+                <h5 class="white-text">About</h5>
+                <p class="grey-text text-lighten-4">A Document Management System designed to sort the documents on the
+                    basis of key characteristics of books.</p>
+            </div>
+        </div>
+    </div>
+    <div class="footer-copyright">
+        <div class="container">
+            Made by <a class="blue-grey-text text-lighten-3" href="http://achandratre.me">Aniruddh
+            Chandratre</a>
+        </div>
+    </div>
+</footer>
+
+</body>
+</html>

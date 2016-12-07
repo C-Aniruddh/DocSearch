@@ -16,7 +16,7 @@ timestamp = datetime.datetime.now()
 
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(APP_ROOT, 'static/uploads')
-ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'doc', 'docx', 'png', 'jpg'}
 signal(SIGPIPE, SIG_DFL)
 app.config['MONGO_DBNAME'] = 'aniruddh'
 app.config['MONGO_URI'] = 'mongodb://localhost:27017/aniruddh'
@@ -66,7 +66,7 @@ def explore():
 
         titlerange = range(0, count - 1, 1)
         find_books = books.find({}, {'book_title': True, '_id': False})
-
+        start_time = time.time()
         for titles in find_books:
             titl = str(titles['book_title'].encode('utf-8'))
             string = '"%s" : null' % titl
@@ -105,6 +105,7 @@ def explore():
         user_find = users.find_one({'name': user})
         user_fullname = user_find['fullname']
 
+
         document_url = []
         book_title = []
         book_author = []
@@ -124,13 +125,14 @@ def explore():
             book_edition.append(book_edi)
             book_sub = book_find['book_subject']
             book_subject.append(book_sub)
+        total_time = '%.5f seconds' % (time.time() - start_time)
         return render_template('explore.html', book_title=book_title, book_author=book_author,
                                document_url=document_url,
                                booklist=booklist, book_edition=book_edition, book_subject=book_subject,
                                user_fullname=user_fullname, sublist=sublist, subjects_dropdown=subjects_dropdown,
                                subjinja=subjinja, authlist=authlist, authors_dropdown=authors_dropdown,
                                authjinja=authjinja, book_titles=book_titles, titlerange=titlerange,
-                               totalcount=totalcount)
+                               totalcount=totalcount, total_time=total_time)
     return 'Kindly login to view this page'
 
 @app.route('/userlogin', methods=['POST', 'GET'])
@@ -543,6 +545,18 @@ def search():
     return 'You need to be logged in to perform search'
 
 
+@app.route('/profile/<user>', methods=['POST', 'GET'])
+def profile(user):
+    if 'username' in session:
+        users = mongo.db.users
+        current_user = session['username']
+        find_user = users.find_one({'name': user})
+        current_user_fullname = find_user['fullname']
+        current_user_email_id = find_user['email']
+        # return render_template('profile.html', current_user = current_user, current_user_fullname=current_user_fullname,current_user_email_id = current_user_email_id)
+    return 'you need to be logged in to perform that action'
+
+
 @app.route('/query/<search_query>', methods=['POST', 'GET'])
 def query(search_query):
     books = mongo.db.documents
@@ -629,6 +643,29 @@ def query(search_query):
                            document_url=document_url, user_fullname=user_fullname, time_taken=time_taken,
                            book_titles=book_titles, titlerange=titlerange, totalcount=totalcount)
 
+
+@app.route('/preferences', methods=['POST', 'GET'])
+def preferences():
+    if 'username' in session:
+        current_user = 'username' in session
+        user = session['username']
+        if (current_user != user):
+            users = mongo.db.users
+            find_user = users.find_one({'name': user})
+            user_fullname = find_user['fullname']
+            user_email = find_user['email']
+
+            if request.method == 'POST':
+                if (bcrypt.hashpw(request.form['current_password'].encode('utf-8'),
+                                  find_user['password'].encode('utf-8')) == find_user['password'].encode('utf-8')):
+                    new_password_hashed = bcrypt.hashpw(request.form['new_password'].encode('utf-8'), bcrypt.gensalt())
+                    users.update_one({'name': user}, {"$set": {'password': new_password_hashed}})
+                    return 'Password updated successfully'
+                return 'The current password is incorrect'
+
+            return render_template('preferences.html', user_fullname=user_fullname, user_email=user_email)
+        return 'you are not allowed to access this page'
+    return 'Kindly login to view this page'
 
 @app.route('/downloads/<filename>')
 def downloads(filename):
