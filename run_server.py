@@ -19,7 +19,7 @@ UPLOAD_FOLDER = os.path.join(APP_ROOT, 'static/uploads')
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 signal(SIGPIPE, SIG_DFL)
 app.config['MONGO_DBNAME'] = 'aniruddh'
-app.config['MONGO_URI'] = 'mongodb://flaskmongo:flask@ds157187.mlab.com:57187/aniruddh'
+app.config['MONGO_URI'] = 'mongodb://localhost:27017/aniruddh'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 mongo = PyMongo(app)
 
