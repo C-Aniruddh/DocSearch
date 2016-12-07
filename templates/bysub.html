@@ -59,21 +59,19 @@
         <br><br>
         <h1 class="header center blue-grey-text">Books</h1>
         <div class="row">
-            {% for x in booklist %}
-                <div class="col s12">
-                    <div class="card">
-                        <div class="card-content">
-                            <span class="card-title">{{ book_title[x] }}</span>
-                            <p>Book Author : {{ book_author[x] }}<br>Book Edition : {{ book_edition[x] }}<br>Subject
-                                : {{ book_subject[x] }}
-                            </p>
-                        </div>
-                        <div class="card-action">
-                            <a href="{{ document_url[x] }}">More Info</a>
-                        </div>
-                    </div>
-                </div>
-            {% endfor %}
+            <div class="col s12">
+                <ul class="collapsible popout" data-collapsible="accordion">
+                    {% for x in booklist %}
+                        <li>
+                            <div class="collapsible-header"><i class="material-icons">code</i>{{ book_title[x] }}
+                                by {{ book_author[x] }}</div>
+                            <div class="collapsible-body"><p>Book Author : {{ book_author[x] }}<br>Book Edition
+                                : {{ book_edition[x] }}<br>Subject
+                                : {{ book_subject[x] }} <br> <a href="{{ document_url[x] }}">More info</a></p></div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
         </div>
         <br><br>
 

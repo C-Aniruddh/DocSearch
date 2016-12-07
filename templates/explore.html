@@ -61,12 +61,14 @@
         <br><br>
         <form class="form" method=POST action="{{ url_for('search') }}" role="form" enctype="multipart/form-data">
             <div class="row">
-                <div class="input-field col s11 left">
+                <div class="input-field col s1 left">
+                </div>
+                <div class="input-field col s8">
                     <input type="text" id="search_ac" autocomplete="off" placeholder="Search for books"
                            name="search_query" class="autocomplete">
                     <label for="search_ac">Search Query</label>
                 </div>
-                <div class="input-field col s1 right">
+                <div class="input-field col s1">
                     <button class="btn waves-effect waves-light" type="submit" name="action">
                         Search
                         <i class="mdi-content-send right"></i>
@@ -75,22 +77,21 @@
             </div>
         </form>
         <div class="row">
-            {% for x in booklist %}
                 <div class="col s12">
-                    <div class="card">
-                        <div class="card-content">
-                            <span class="card-title">{{ book_title[x] }}</span>
-                            <p>Book Author : {{ book_author[x] }}<br>Book Edition : {{ book_edition[x] }}<br>Subject
-                                : {{ book_subject[x] }}
-                            </p>
-                        </div>
-                        <div class="card-action">
-                            <a href="{{ document_url[x] }}">More Info</a>
-                        </div>
-                    </div>
+                    <ul class="collapsible popout" data-collapsible="accordion">
+                        {% for x in booklist %}
+                            <li>
+                                <div class="collapsible-header"><i class="material-icons">code</i>{{ book_title[x] }}
+                                    by {{ book_author[x] }}</div>
+                                <div class="collapsible-body"><p>Book Author : {{ book_author[x] }}<br>Book Edition
+                                    : {{ book_edition[x] }}<br>Subject
+                                    : {{ book_subject[x] }} <br> <a href="{{ document_url[x] }}">More info</a></p></div>
+                            </li>
+                        {% endfor %}
+                    </ul>
                 </div>
-            {% endfor %}
         </div>
+
         <br><br>
 
     </div>
