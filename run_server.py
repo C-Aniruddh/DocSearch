@@ -50,7 +50,7 @@ def index():
             querystr = '/query/%s' % search_query
             return redirect(querystr)
         return render_template('home.html', user_fullname=user_fullname, book_titles=book_titles,
-                               titlerange=titlerange, totalcount=totalcount)
+                               titlerange=titlerange, totalcount=totalcount, user=user)
 
     return render_template('index.html')
 
@@ -132,7 +132,7 @@ def explore():
                                user_fullname=user_fullname, sublist=sublist, subjects_dropdown=subjects_dropdown,
                                subjinja=subjinja, authlist=authlist, authors_dropdown=authors_dropdown,
                                authjinja=authjinja, book_titles=book_titles, titlerange=titlerange,
-                               totalcount=totalcount, total_time=total_time)
+                               totalcount=totalcount, total_time=total_time, user=user)
     return 'Kindly login to view this page'
 
 @app.route('/userlogin', methods=['POST', 'GET'])
@@ -206,6 +206,7 @@ def submit():
             subject_name = subject_find['subject']
             subjects_dropdown.append(subject_name)
 
+        uploader = session['username']
         authors = mongo.db.authors
         authors_count = authors.count()
         authlist = range(1, authors_count + 1, 1)
@@ -249,7 +250,7 @@ def submit():
                 books.insert({'book_title': book_title, 'filename': fname, 'book_author': book_author,
                               'book_edition': book_edition, 'type': document_type, 'book_subject': subject_name,
                               'book_id': book_id, 'type_id': type_c_id, 'sub_id': sub_c_id, 'book_url': download_link,
-                              'auth_id': auth_c_id})
+                              'auth_id': auth_c_id, 'uploaded_by': uploader})
 
         return render_template('submit2.html', sublist=sublist, subjects_dropdown=subjects_dropdown, subjinja=subjinja,
                                authlist=authlist, authors_dropdown=authors_dropdown, authjinja=authjinja)
@@ -316,7 +317,8 @@ def document(book_id):
     user_find = users.find_one({'name': user})
     user_fullname = user_find['fullname']
     return render_template('book2.html', book_title=book_title, book_author=book_author, book_edition=book_edition,
-                           type=book_type, book_subject=book_subject, book_url=book_url, user_fullname=user_fullname)
+                           type=book_type, book_subject=book_subject, book_url=book_url, user_fullname=user_fullname,
+                           user=user)
 
 
 @app.route('/bysub/<subid>')
@@ -379,7 +381,8 @@ def bysub(subid):
     return render_template('bysub.html', book_title=book_title, book_author=book_author, document_url=document_url,
                            booklist=booklist, book_edition=book_edition, book_subject=book_subject,
                            user_fullname=user_fullname, sublist=sublist, subjects_dropdown=subjects_dropdown,
-                           subjinja=subjinja, authlist=authlist, authors_dropdown=authors_dropdown, authjinja=authjinja)
+                           subjinja=subjinja, authlist=authlist, authors_dropdown=authors_dropdown, authjinja=authjinja,
+                           user=user)
 
 
 @app.route('/bytype/<typeid>')
@@ -427,7 +430,7 @@ def bytype(typeid):
     for x in booklist:
         y = x + 1
         z = str(y)
-        book_find = documents.find_one({'type_id': z})
+        book_find = documents.find_one({'type_id': z, 'type': typeid})
         book_id = book_find['book_id']
         doc_url = '/document/%s' % book_id
         document_url.append(doc_url)
@@ -443,7 +446,8 @@ def bytype(typeid):
     return render_template('bytype.html', book_title=book_title, book_author=book_author, document_url=document_url,
                            booklist=booklist, book_edition=book_edition, book_subject=book_subject,
                            user_fullname=user_fullname, sublist=sublist, subjects_dropdown=subjects_dropdown,
-                           subjinja=subjinja, authlist=authlist, authors_dropdown=authors_dropdown, authjinja=authjinja)
+                           subjinja=subjinja, authlist=authlist, authors_dropdown=authors_dropdown, authjinja=authjinja,
+                           user=user)
 
 
 @app.route('/byauth/<auth>')
@@ -507,7 +511,8 @@ def byauth(auth):
     return render_template('byauth.html', book_title=book_title, book_author=book_author, document_url=document_url,
                            booklist=booklist, book_edition=book_edition, book_subject=book_subject,
                            user_fullname=user_fullname, sublist=sublist, subjects_dropdown=subjects_dropdown,
-                           subjinja=subjinja, authlist=authlist, authors_dropdown=authors_dropdown, authjinja=authjinja)
+                           subjinja=subjinja, authlist=authlist, authors_dropdown=authors_dropdown, authjinja=authjinja,
+                           user=user)
 
 
 def toJson(data):
@@ -540,7 +545,7 @@ def search():
             querystr = '/query/%s' % search_query
             return redirect(querystr)
         return render_template('search.html', user_fullname=user_fullname, book_titles=book_titles,
-                               titlerange=titlerange, totalcount=totalcount)
+                               titlerange=titlerange, totalcount=totalcount, user=user)
 
     return 'You need to be logged in to perform search'
 
@@ -553,7 +558,52 @@ def profile(user):
         find_user = users.find_one({'name': user})
         current_user_fullname = find_user['fullname']
         current_user_email_id = find_user['email']
-        # return render_template('profile.html', current_user = current_user, current_user_fullname=current_user_fullname,current_user_email_id = current_user_email_id)
+        books = mongo.db.documents
+        find_books = books.find({'uploaded_by': user})
+        tot_count = find_books.count()
+        booklist = range(0, tot_count, 1)
+        document_url = []
+        book_title = []
+        book_author = []
+        book_edition = []
+        book_subject = []
+        book_ids = []
+        start_time = time.time()
+        find_book_author = books.find({'uploaded_by': user}, {'book_author': True, '_id': False})
+        for author in find_book_author:
+            auth = str(author['book_author'].encode('utf-8'))
+            book_author.append(auth)
+
+        find_book_title = books.find({'uploaded_by': user}, {'book_title': True, '_id': False})
+        for title in find_book_title:
+            titl = str(title['book_title'].encode('utf-8'))
+            book_title.append(titl)
+
+        find_book_id = books.find({'uploaded_by': user}, {'book_id': True, '_id': False})
+        for identity in find_book_id:
+            iden = str(identity['book_id'].encode('utf-8'))
+            book_ids.append(iden)
+
+        find_book_edition = books.find({'uploaded_by': user}, {'book_edition': True, '_id': False})
+        for edition in find_book_edition:
+            edi = str(edition['book_edition'].encode('utf-8'))
+            book_edition.append(edi)
+
+        find_book_subject = books.find({'uploaded_by': user}, {'book_subject': True, '_id': False})
+        for subject in find_book_subject:
+            subj = str(subject['book_subject'].encode('utf-8'))
+            book_subject.append(subj)
+
+        for x in booklist:
+            id = book_ids[x]
+            doc_url = '/document/%s' % id
+            document_url.append(doc_url)
+
+        total_time = '%.5f seconds' % (time.time() - start_time)
+        return render_template('profile.html', current_user=current_user, current_user_email_id=current_user_email_id,
+                               current_user_fullname=current_user_fullname, booklist=booklist, book_author=book_author,
+                               book_title=book_title, book_edition=book_edition, book_subject=book_subject,
+                               document_url=document_url, total_time=total_time)
     return 'you need to be logged in to perform that action'
 
 
@@ -641,7 +691,7 @@ def query(search_query):
     return render_template('query.html', search_query=search_query, booklist=booklist, book_title=book_title,
                            book_subject=book_subject, book_edition=book_edition, book_author=book_author,
                            document_url=document_url, user_fullname=user_fullname, time_taken=time_taken,
-                           book_titles=book_titles, titlerange=titlerange, totalcount=totalcount)
+                           book_titles=book_titles, titlerange=titlerange, totalcount=totalcount, user=user)
 
 
 @app.route('/preferences', methods=['POST', 'GET'])
@@ -663,7 +713,7 @@ def preferences():
                     return 'Password updated successfully'
                 return 'The current password is incorrect'
 
-            return render_template('preferences.html', user_fullname=user_fullname, user_email=user_email)
+            return render_template('preferences.html', user_fullname=user_fullname, user_email=user_email, user=user)
         return 'you are not allowed to access this page'
     return 'Kindly login to view this page'
 
