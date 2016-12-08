@@ -16,7 +16,7 @@ timestamp = datetime.datetime.now()
 
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(APP_ROOT, 'static/uploads')
-ALLOWED_EXTENSIONS = {'txt', 'pdf', 'doc', 'docx', 'png', 'jpg'}
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'doc', 'docx', 'png', 'jpg', 'ppt', 'pptx'}
 signal(SIGPIPE, SIG_DFL)
 app.config['MONGO_DBNAME'] = 'aniruddh'
 app.config['MONGO_URI'] = 'mongodb://localhost:27017/aniruddh'
@@ -105,34 +105,52 @@ def explore():
         user_find = users.find_one({'name': user})
         user_fullname = user_find['fullname']
 
-
         document_url = []
         book_title = []
         book_author = []
         book_edition = []
         book_subject = []
+        book_ids = []
+
+        find_book_author = books.find({}, {'book_author': True, '_id': False})
+        for author in find_book_author:
+            auth_r = str(author['book_author'].encode('utf-8'))
+            book_author.append(auth_r)
+
+        find_book_title = books.find({}, {'book_title': True, '_id': False})
+        for title in find_book_title:
+            titl = str(title['book_title'].encode('utf-8'))
+            book_title.append(titl)
+
+        find_book_id = books.find({}, {'book_id': True, '_id': False})
+        for identity in find_book_id:
+            iden = str(identity['book_id'].encode('utf-8'))
+            book_ids.append(iden)
+
+        find_book_edition = books.find({}, {'book_edition': True, '_id': False})
+        for edition in find_book_edition:
+            edi = str(edition['book_edition'].encode('utf-8'))
+            book_edition.append(edi)
+
+        find_book_subject = books.find({}, {'book_subject': True, '_id': False})
+        for subject in find_book_subject:
+            subj = str(subject['book_subject'].encode('utf-8'))
+            book_subject.append(subj)
+
         for x in booklist:
-            y = x + 1
-            z = str(y)
-            book_find = books.find_one({'book_id': z})
-            doc_url = '/document/%s' % z
+            id = book_ids[x]
+            doc_url = '/document/%s' % id
             document_url.append(doc_url)
-            book_auth = book_find['book_author']
-            book_author.append(book_auth)
-            book_titl = book_find['book_title']
-            book_title.append(book_titl)
-            book_edi = book_find['book_edition']
-            book_edition.append(book_edi)
-            book_sub = book_find['book_subject']
-            book_subject.append(book_sub)
         total_time = '%.5f seconds' % (time.time() - start_time)
+        total_queries = count
+
         return render_template('explore.html', book_title=book_title, book_author=book_author,
                                document_url=document_url,
                                booklist=booklist, book_edition=book_edition, book_subject=book_subject,
                                user_fullname=user_fullname, sublist=sublist, subjects_dropdown=subjects_dropdown,
                                subjinja=subjinja, authlist=authlist, authors_dropdown=authors_dropdown,
                                authjinja=authjinja, book_titles=book_titles, titlerange=titlerange,
-                               totalcount=totalcount, total_time=total_time, user=user)
+                               totalcount=totalcount, total_time=total_time, user=user, total_queries=total_queries)
     return 'Kindly login to view this page'
 
 @app.route('/userlogin', methods=['POST', 'GET'])
@@ -357,32 +375,51 @@ def bysub(subid):
     user = session['username']
     user_find = users.find_one({'name': user})
     user_fullname = user_find['fullname']
+
     document_url = []
     book_title = []
     book_author = []
     book_edition = []
     book_subject = []
+    book_ids = []
+
+    start_time = time.time()
+    find_book_author = documents.find({'book_subject': subid}, {'book_author': True, '_id': False})
+    for author in find_book_author:
+        auth_r = str(author['book_author'].encode('utf-8'))
+        book_author.append(auth_r)
+
+    find_book_title = documents.find({'book_subject': subid}, {'book_title': True, '_id': False})
+    for title in find_book_title:
+        titl = str(title['book_title'].encode('utf-8'))
+        book_title.append(titl)
+
+    find_book_id = documents.find({'book_subject': subid}, {'book_id': True, '_id': False})
+    for identity in find_book_id:
+        iden = str(identity['book_id'].encode('utf-8'))
+        book_ids.append(iden)
+
+    find_book_edition = documents.find({'book_subject': subid}, {'book_edition': True, '_id': False})
+    for edition in find_book_edition:
+        edi = str(edition['book_edition'].encode('utf-8'))
+        book_edition.append(edi)
+
+    find_book_subject = documents.find({'book_subject': subid}, {'book_subject': True, '_id': False})
+    for subject in find_book_subject:
+        subj = str(subject['book_subject'].encode('utf-8'))
+        book_subject.append(subj)
 
     for x in booklist:
-        y = x + 1
-        z = str(y)
-        book_find = documents.find_one({'sub_id': z, 'book_subject': subid})
-        book_id = book_find['book_id']
-        doc_url = '/document/%s' % book_id
+        id = book_ids[x]
+        doc_url = '/document/%s' % id
         document_url.append(doc_url)
-        book_auth = book_find['book_author']
-        book_author.append(book_auth)
-        book_titl = book_find['book_title']
-        book_title.append(book_titl)
-        book_edi = book_find['book_edition']
-        book_edition.append(book_edi)
-        book_sub = book_find['book_subject']
-        book_subject.append(book_sub)
+
+    time_taken = '%.5f seconds' % (time.time() - start_time)
     return render_template('bysub.html', book_title=book_title, book_author=book_author, document_url=document_url,
                            booklist=booklist, book_edition=book_edition, book_subject=book_subject,
                            user_fullname=user_fullname, sublist=sublist, subjects_dropdown=subjects_dropdown,
                            subjinja=subjinja, authlist=authlist, authors_dropdown=authors_dropdown, authjinja=authjinja,
-                           user=user)
+                           user=user, total_queries=count, time_taken=time_taken)
 
 
 @app.route('/bytype/<typeid>')
@@ -421,33 +458,52 @@ def bytype(typeid):
     user = session['username']
     user_find = users.find_one({'name': user})
     user_fullname = user_find['fullname']
+
     document_url = []
     book_title = []
     book_author = []
     book_edition = []
     book_subject = []
+    book_ids = []
+
+    start_time = time.time()
+    find_book_author = documents.find({'type': typeid}, {'book_author': True, '_id': False})
+    for author in find_book_author:
+        auth_r = str(author['book_author'].encode('utf-8'))
+        book_author.append(auth_r)
+
+    find_book_title = documents.find({'type': typeid}, {'book_title': True, '_id': False})
+    for title in find_book_title:
+        titl = str(title['book_title'].encode('utf-8'))
+        book_title.append(titl)
+
+    find_book_id = documents.find({'type': typeid}, {'book_id': True, '_id': False})
+    for identity in find_book_id:
+        iden = str(identity['book_id'].encode('utf-8'))
+        book_ids.append(iden)
+
+    find_book_edition = documents.find({'type': typeid}, {'book_edition': True, '_id': False})
+    for edition in find_book_edition:
+        edi = str(edition['book_edition'].encode('utf-8'))
+        book_edition.append(edi)
+
+    find_book_subject = documents.find({'type': typeid}, {'book_subject': True, '_id': False})
+    for subject in find_book_subject:
+        subj = str(subject['book_subject'].encode('utf-8'))
+        book_subject.append(subj)
 
     for x in booklist:
-        y = x + 1
-        z = str(y)
-        book_find = documents.find_one({'type_id': z, 'type': typeid})
-        book_id = book_find['book_id']
-        doc_url = '/document/%s' % book_id
+        id = book_ids[x]
+        doc_url = '/document/%s' % id
         document_url.append(doc_url)
-        book_auth = book_find['book_author']
-        book_author.append(book_auth)
-        book_titl = book_find['book_title']
-        book_title.append(book_titl)
-        book_edi = book_find['book_edition']
-        book_edition.append(book_edi)
-        book_sub = book_find['book_subject']
-        book_subject.append(book_sub)
+
+    time_taken = '%.5f seconds' % (time.time() - start_time)
 
     return render_template('bytype.html', book_title=book_title, book_author=book_author, document_url=document_url,
                            booklist=booklist, book_edition=book_edition, book_subject=book_subject,
                            user_fullname=user_fullname, sublist=sublist, subjects_dropdown=subjects_dropdown,
                            subjinja=subjinja, authlist=authlist, authors_dropdown=authors_dropdown, authjinja=authjinja,
-                           user=user)
+                           user=user, total_queries=count, time_taken=time_taken)
 
 
 @app.route('/byauth/<auth>')
@@ -491,28 +547,46 @@ def byauth(auth):
     book_author = []
     book_edition = []
     book_subject = []
+    book_ids = []
+
+    start_time = time.time()
+    find_book_author = documents.find({'book_author': auth}, {'book_author': True, '_id': False})
+    for author in find_book_author:
+        auth_r = str(author['book_author'].encode('utf-8'))
+        book_author.append(auth_r)
+
+    find_book_title = documents.find({'book_author': auth}, {'book_title': True, '_id': False})
+    for title in find_book_title:
+        titl = str(title['book_title'].encode('utf-8'))
+        book_title.append(titl)
+
+    find_book_id = documents.find({'book_author': auth}, {'book_id': True, '_id': False})
+    for identity in find_book_id:
+        iden = str(identity['book_id'].encode('utf-8'))
+        book_ids.append(iden)
+
+    find_book_edition = documents.find({'book_author': auth}, {'book_edition': True, '_id': False})
+    for edition in find_book_edition:
+        edi = str(edition['book_edition'].encode('utf-8'))
+        book_edition.append(edi)
+
+    find_book_subject = documents.find({'book_author': auth}, {'book_subject': True, '_id': False})
+    for subject in find_book_subject:
+        subj = str(subject['book_subject'].encode('utf-8'))
+        book_subject.append(subj)
 
     for x in booklist:
-        y = x + 1
-        z = str(y)
-        book_find = documents.find_one({'auth_id': z, 'book_author': auth})
-        book_id = book_find['book_id']
-        doc_url = '/document/%s' % book_id
+        id = book_ids[x]
+        doc_url = '/document/%s' % id
         document_url.append(doc_url)
-        book_auth = book_find['book_author']
-        book_author.append(book_auth)
-        book_titl = book_find['book_title']
-        book_title.append(book_titl)
-        book_edi = book_find['book_edition']
-        book_edition.append(book_edi)
-        book_sub = book_find['book_subject']
-        book_subject.append(book_sub)
+
+    time_taken = '%.5f seconds' % (time.time() - start_time)
 
     return render_template('byauth.html', book_title=book_title, book_author=book_author, document_url=document_url,
                            booklist=booklist, book_edition=book_edition, book_subject=book_subject,
                            user_fullname=user_fullname, sublist=sublist, subjects_dropdown=subjects_dropdown,
                            subjinja=subjinja, authlist=authlist, authors_dropdown=authors_dropdown, authjinja=authjinja,
-                           user=user)
+                           user=user, time_taken=time_taken, total_queries=count)
 
 
 def toJson(data):
@@ -555,9 +629,11 @@ def profile(user):
     if 'username' in session:
         users = mongo.db.users
         current_user = session['username']
+        find_current_user = users.find_one({'name': current_user})
+        current_user_fullname = find_current_user['fullname']
         find_user = users.find_one({'name': user})
-        current_user_fullname = find_user['fullname']
-        current_user_email_id = find_user['email']
+        user_fullname = find_user['fullname']
+        user_email_id = find_user['email']
         books = mongo.db.documents
         find_books = books.find({'uploaded_by': user})
         tot_count = find_books.count()
@@ -600,10 +676,11 @@ def profile(user):
             document_url.append(doc_url)
 
         total_time = '%.5f seconds' % (time.time() - start_time)
-        return render_template('profile.html', current_user=current_user, current_user_email_id=current_user_email_id,
+        return render_template('profile.html', current_user=current_user, user_email_id=user_email_id,
+                               user_fullname=user_fullname,
                                current_user_fullname=current_user_fullname, booklist=booklist, book_author=book_author,
                                book_title=book_title, book_edition=book_edition, book_subject=book_subject,
-                               document_url=document_url, total_time=total_time)
+                               document_url=document_url, total_time=total_time, user=user)
     return 'you need to be logged in to perform that action'
 
 
@@ -612,7 +689,7 @@ def query(search_query):
     books = mongo.db.documents
     find_books = books.find({'book_title': {"$regex": search_query}})
 
-    count = books.count()
+    count = find_books.count()
     titlerange = range(0, count - 1, 1)
     find_books_pred = books.find({}, {'book_title': True, '_id': False})
 
@@ -681,7 +758,7 @@ def query(search_query):
         doc_url = '/document/%s' % id
         document_url.append(doc_url)
 
-    time_taken = '%s seconds' % (time.time() - start_time)
+    time_taken = '%.5f seconds' % (time.time() - start_time)
 
     if request.method == 'POST':
         searchq = request.form['searchq']
@@ -691,7 +768,8 @@ def query(search_query):
     return render_template('query.html', search_query=search_query, booklist=booklist, book_title=book_title,
                            book_subject=book_subject, book_edition=book_edition, book_author=book_author,
                            document_url=document_url, user_fullname=user_fullname, time_taken=time_taken,
-                           book_titles=book_titles, titlerange=titlerange, totalcount=totalcount, user=user)
+                           book_titles=book_titles, titlerange=titlerange, totalcount=totalcount, user=user,
+                           result_count=count)
 
 
 @app.route('/preferences', methods=['POST', 'GET'])
