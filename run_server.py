@@ -1,3 +1,4 @@
+import binascii
 import datetime
 import json
 import os
@@ -104,6 +105,7 @@ def explore():
         user = session['username']
         user_find = users.find_one({'name': user})
         user_fullname = user_find['fullname']
+        user_type = user_find['user_type']
 
         document_url = []
         book_title = []
@@ -111,6 +113,8 @@ def explore():
         book_edition = []
         book_subject = []
         book_ids = []
+        book_hashes = []
+        delete_url = []
 
         find_book_author = books.find({}, {'book_author': True, '_id': False})
         for author in find_book_author:
@@ -137,10 +141,21 @@ def explore():
             subj = str(subject['book_subject'].encode('utf-8'))
             book_subject.append(subj)
 
+        find_book_hash = books.find({}, {'hash_dentifier': True, '_id': False})
+        for bhash in find_book_hash:
+            hash_code = str(bhash['hash_dentifier'].encode('utf-8'))
+            book_hashes.append(hash_code)
+
+        for x in booklist:
+            hashcode = book_hashes[x]
+            del_url = '/delete/%s' % hashcode
+            delete_url.append(del_url)
+
         for x in booklist:
             id = book_ids[x]
             doc_url = '/document/%s' % id
             document_url.append(doc_url)
+
         total_time = '%.5f seconds' % (time.time() - start_time)
         total_queries = count
 
@@ -150,7 +165,8 @@ def explore():
                                user_fullname=user_fullname, sublist=sublist, subjects_dropdown=subjects_dropdown,
                                subjinja=subjinja, authlist=authlist, authors_dropdown=authors_dropdown,
                                authjinja=authjinja, book_titles=book_titles, titlerange=titlerange,
-                               totalcount=totalcount, total_time=total_time, user=user, total_queries=total_queries)
+                               totalcount=totalcount, total_time=total_time, user=user, total_queries=total_queries,
+                               delete_url=delete_url, user_type=user_type)
     return 'Kindly login to view this page'
 
 @app.route('/userlogin', methods=['POST', 'GET'])
@@ -189,11 +205,13 @@ def register():
         users = mongo.db.users
         user_fname = request.form['name']
         user_email = request.form['email']
+        user_type = 'user'
         existing_user = users.find_one({'name': request.form['username'], 'email': user_email})
         if existing_user is None:
             hashpass = bcrypt.hashpw(request.form['pass'].encode('utf-8'), bcrypt.gensalt())
             users.insert(
-                {'fullname': user_fname, 'email': user_email, 'name': request.form['username'], 'password': hashpass})
+                {'fullname': user_fname, 'email': user_email, 'name': request.form['username'], 'password': hashpass,
+                 'user_type': user_type})
             session['username'] = request.form['username']
             return redirect(url_for('index'))
 
@@ -264,11 +282,12 @@ def submit():
                 auth_c_tot = auth_c_find.count()
                 auth_c = auth_c_tot + 1
                 auth_c_id = str(auth_c)
+                delhash_id = binascii.b2a_hex(os.urandom(15))
                 download_link = '/downloads/%s' % fname
                 books.insert({'book_title': book_title, 'filename': fname, 'book_author': book_author,
                               'book_edition': book_edition, 'type': document_type, 'book_subject': subject_name,
                               'book_id': book_id, 'type_id': type_c_id, 'sub_id': sub_c_id, 'book_url': download_link,
-                              'auth_id': auth_c_id, 'uploaded_by': uploader})
+                              'auth_id': auth_c_id, 'uploaded_by': uploader, 'hash_dentifier': delhash_id})
 
         return render_template('submit2.html', sublist=sublist, subjects_dropdown=subjects_dropdown, subjinja=subjinja,
                                authlist=authlist, authors_dropdown=authors_dropdown, authjinja=authjinja)
@@ -375,6 +394,7 @@ def bysub(subid):
     user = session['username']
     user_find = users.find_one({'name': user})
     user_fullname = user_find['fullname']
+    user_type = user_find['user_type']
 
     document_url = []
     book_title = []
@@ -382,6 +402,8 @@ def bysub(subid):
     book_edition = []
     book_subject = []
     book_ids = []
+    book_hashes = []
+    delete_url = []
 
     start_time = time.time()
     find_book_author = documents.find({'book_subject': subid}, {'book_author': True, '_id': False})
@@ -409,6 +431,16 @@ def bysub(subid):
         subj = str(subject['book_subject'].encode('utf-8'))
         book_subject.append(subj)
 
+    find_book_hash = documents.find({'book_subject': subid}, {'hash_dentifier': True, '_id': False})
+    for bhash in find_book_hash:
+        hash_code = str(bhash['hash_dentifier'].encode('utf-8'))
+        book_hashes.append(hash_code)
+
+    for x in booklist:
+        hashcode = book_hashes[x]
+        del_url = '/delete/%s' % hashcode
+        delete_url.append(del_url)
+
     for x in booklist:
         id = book_ids[x]
         doc_url = '/document/%s' % id
@@ -419,7 +451,8 @@ def bysub(subid):
                            booklist=booklist, book_edition=book_edition, book_subject=book_subject,
                            user_fullname=user_fullname, sublist=sublist, subjects_dropdown=subjects_dropdown,
                            subjinja=subjinja, authlist=authlist, authors_dropdown=authors_dropdown, authjinja=authjinja,
-                           user=user, total_queries=count, time_taken=time_taken)
+                           user=user, total_queries=count, time_taken=time_taken, delete_url=delete_url,
+                           user_type=user_type)
 
 
 @app.route('/bytype/<typeid>')
@@ -458,6 +491,7 @@ def bytype(typeid):
     user = session['username']
     user_find = users.find_one({'name': user})
     user_fullname = user_find['fullname']
+    user_type = user_find['user_type']
 
     document_url = []
     book_title = []
@@ -465,6 +499,8 @@ def bytype(typeid):
     book_edition = []
     book_subject = []
     book_ids = []
+    book_hashes = []
+    delete_url = []
 
     start_time = time.time()
     find_book_author = documents.find({'type': typeid}, {'book_author': True, '_id': False})
@@ -492,6 +528,16 @@ def bytype(typeid):
         subj = str(subject['book_subject'].encode('utf-8'))
         book_subject.append(subj)
 
+    find_book_hash = documents.find({'type': typeid}, {'hash_dentifier': True, '_id': False})
+    for bhash in find_book_hash:
+        hash_code = str(bhash['hash_dentifier'].encode('utf-8'))
+        book_hashes.append(hash_code)
+
+    for x in booklist:
+        hashcode = book_hashes[x]
+        del_url = '/delete/%s' % hashcode
+        delete_url.append(del_url)
+
     for x in booklist:
         id = book_ids[x]
         doc_url = '/document/%s' % id
@@ -503,7 +549,8 @@ def bytype(typeid):
                            booklist=booklist, book_edition=book_edition, book_subject=book_subject,
                            user_fullname=user_fullname, sublist=sublist, subjects_dropdown=subjects_dropdown,
                            subjinja=subjinja, authlist=authlist, authors_dropdown=authors_dropdown, authjinja=authjinja,
-                           user=user, total_queries=count, time_taken=time_taken)
+                           user=user, total_queries=count, time_taken=time_taken, delete_url=delete_url,
+                           user_type=user_type)
 
 
 @app.route('/byauth/<auth>')
@@ -542,12 +589,16 @@ def byauth(auth):
     user = session['username']
     user_find = users.find_one({'name': user})
     user_fullname = user_find['fullname']
+    user_type = user_find['user_type']
+
     document_url = []
     book_title = []
     book_author = []
     book_edition = []
     book_subject = []
     book_ids = []
+    book_hashes = []
+    delete_url = []
 
     start_time = time.time()
     find_book_author = documents.find({'book_author': auth}, {'book_author': True, '_id': False})
@@ -575,6 +626,16 @@ def byauth(auth):
         subj = str(subject['book_subject'].encode('utf-8'))
         book_subject.append(subj)
 
+    find_book_hash = documents.find({'book_author': auth}, {'hash_dentifier': True, '_id': False})
+    for bhash in find_book_hash:
+        hash_code = str(bhash['hash_dentifier'].encode('utf-8'))
+        book_hashes.append(hash_code)
+
+    for x in booklist:
+        hashcode = book_hashes[x]
+        del_url = '/delete/%s' % hashcode
+        delete_url.append(del_url)
+
     for x in booklist:
         id = book_ids[x]
         doc_url = '/document/%s' % id
@@ -586,7 +647,8 @@ def byauth(auth):
                            booklist=booklist, book_edition=book_edition, book_subject=book_subject,
                            user_fullname=user_fullname, sublist=sublist, subjects_dropdown=subjects_dropdown,
                            subjinja=subjinja, authlist=authlist, authors_dropdown=authors_dropdown, authjinja=authjinja,
-                           user=user, time_taken=time_taken, total_queries=count)
+                           user=user, time_taken=time_taken, total_queries=count, delete_url=delete_url,
+                           user_type=user_type)
 
 
 def toJson(data):
@@ -634,6 +696,7 @@ def profile(user):
         find_user = users.find_one({'name': user})
         user_fullname = find_user['fullname']
         user_email_id = find_user['email']
+        user_type = find_current_user['user_type']
         books = mongo.db.documents
         find_books = books.find({'uploaded_by': user})
         tot_count = find_books.count()
@@ -644,6 +707,8 @@ def profile(user):
         book_edition = []
         book_subject = []
         book_ids = []
+        book_hashes = []
+        delete_url = []
         start_time = time.time()
         find_book_author = books.find({'uploaded_by': user}, {'book_author': True, '_id': False})
         for author in find_book_author:
@@ -670,6 +735,16 @@ def profile(user):
             subj = str(subject['book_subject'].encode('utf-8'))
             book_subject.append(subj)
 
+        find_book_hash = books.find({'uploaded_by': user}, {'hash_dentifier': True, '_id': False})
+        for bhash in find_book_hash:
+            hash_code = str(bhash['hash_dentifier'].encode('utf-8'))
+            book_hashes.append(hash_code)
+
+        for x in booklist:
+            hashcode = book_hashes[x]
+            del_url = '/delete/%s' % hashcode
+            delete_url.append(del_url)
+
         for x in booklist:
             id = book_ids[x]
             doc_url = '/document/%s' % id
@@ -677,7 +752,7 @@ def profile(user):
 
         total_time = '%.5f seconds' % (time.time() - start_time)
         return render_template('profile.html', current_user=current_user, user_email_id=user_email_id,
-                               user_fullname=user_fullname,
+                               user_fullname=user_fullname, delete_url=delete_url, user_type=user_type,
                                current_user_fullname=current_user_fullname, booklist=booklist, book_author=book_author,
                                book_title=book_title, book_edition=book_edition, book_subject=book_subject,
                                document_url=document_url, total_time=total_time, user=user)
@@ -710,11 +785,14 @@ def query(search_query):
     book_edition = []
     book_subject = []
     book_ids = []
+    book_hashes = []
+    delete_url = []
 
     users = mongo.db.users
     user = session['username']
     user_find = users.find_one({'name': user})
     user_fullname = user_find['fullname']
+    user_type = user_find['user_type']
 
     """
     Basic Goal is to make a list, sort the data and then fill the data from a cursor to a list by converting the
@@ -753,6 +831,16 @@ def query(search_query):
         subj = str(subject['book_subject'].encode('utf-8'))
         book_subject.append(subj)
 
+    find_book_hash = books.find({'book_title': {"$regex": search_query}}, {'hash_dentifier': True, '_id': False})
+    for bhash in find_book_hash:
+        hash_code = str(bhash['hash_dentifier'].encode('utf-8'))
+        book_hashes.append(hash_code)
+
+    for x in booklist:
+        hashcode = book_hashes[x]
+        del_url = '/delete/%s' % hashcode
+        delete_url.append(del_url)
+
     for x in booklist:
         id = book_ids[x]
         doc_url = '/document/%s' % id
@@ -769,7 +857,7 @@ def query(search_query):
                            book_subject=book_subject, book_edition=book_edition, book_author=book_author,
                            document_url=document_url, user_fullname=user_fullname, time_taken=time_taken,
                            book_titles=book_titles, titlerange=titlerange, totalcount=totalcount, user=user,
-                           result_count=count)
+                           result_count=count, delete_url=delete_url, user_type=user_type)
 
 
 @app.route('/preferences', methods=['POST', 'GET'])
@@ -794,6 +882,20 @@ def preferences():
             return render_template('preferences.html', user_fullname=user_fullname, user_email=user_email, user=user)
         return 'you are not allowed to access this page'
     return 'Kindly login to view this page'
+
+
+@app.route('/delete/<document_id>', methods=['POST', 'GET'])
+def delete(document_id):
+    if 'username' in session:
+        current_user = session['username']
+        documents = mongo.db.documents
+        find_document = documents.find_one({'hash_dentifier': document_id})
+        uploader = find_document['uploaded_by']
+        if (current_user == uploader):
+            documents.remove({'hash_dentifier': document_id})
+            return "Document successfully removed"
+        return "Uploader and current user are not the same. Abort."
+    return redirect('/userlogin')
 
 @app.route('/downloads/<filename>')
 def downloads(filename):

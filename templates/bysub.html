@@ -67,9 +67,25 @@
                         <li>
                             <div class="collapsible-header"><i class="material-icons">code</i>{{ book_title[x] }}
                                 by {{ book_author[x] }}</div>
-                            <div class="collapsible-body"><p>Book Author : {{ book_author[x] }}<br>Book Edition
-                                : {{ book_edition[x] }}<br>Subject
-                                : {{ book_subject[x] }} <br> <a href="{{ document_url[x] }}">More info</a></p></div>
+                            <div class="collapsible-body">
+                                <div class="row">
+                                    <div class="col s6 left">
+                                        <p>Book Author : {{ book_author[x] }}<br>Book Edition
+                                            : {{ book_edition[x] }}<br>Subject
+                                            : {{ book_subject[x] }} <br> <a href="{{ document_url[x] }}">More info</a>
+                                        </p>
+                                    </div>
+                                    {% if user_type == "admin" %}
+                                        <div class="col s1 right">
+                                        <div class="row">
+
+                                            <a class="btn-floating btn-large waves-effect waves-light blue_grey"
+                                               href="#delete_document_{{ x }}"><i
+                                                    class="material-icons">delete_forever</i></a>
+                                        </div>
+                                    {% endif %}
+                                    </div>
+                                </div>
                         </li>
                     {% endfor %}
                 </ul>
@@ -79,7 +95,21 @@
 
     </div>
 </div>
-
+{% if user_type == "admin" %}
+    {% for x in booklist %}
+        <div id="delete_document_{{ x }}" class="modal">
+            <div class="modal-content">
+                <h4>Are you sure?</h4>
+                <p>This action is irreversible!</p>
+            </div>
+            <div class="modal-footer">
+                <a href="#!" class=" modal-action modal-close waves-effect waves-green btn-flat">Cancel</a>
+                <a href="{{ delete_url[x] }}"
+                   class=" modal-action modal-close waves-effect waves-green btn-flat">Delete</a>
+            </div>
+        </div>
+    {% endfor %}
+{% endif %}
 
 <div class="container">
     <div class="section">
@@ -111,7 +141,12 @@
     </div>
 </footer>
 
-
+<script>
+    $(document).ready(function () {
+        // the "href" attribute of .modal-trigger must specify the modal ID that wants to be triggered
+        $('.modal').modal();
+    });
+</script>
 <!--  Scripts-->
 <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
 
