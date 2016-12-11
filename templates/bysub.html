@@ -69,21 +69,25 @@
                                 by {{ book_author[x] }}</div>
                             <div class="collapsible-body">
                                 <div class="row">
-                                    <div class="col s6 left">
+                                    <div class="col s2">
+                                        <img class="materialboxed" style="margin: 20px 20px" width="145" align="middle"
+                                             src="{{ thumbnail_url[x] }}">
+                                </div>
+                                    <div class="col s6">
                                         <p>Book Author : {{ book_author[x] }}<br>Book Edition
                                             : {{ book_edition[x] }}<br>Subject
-                                            : {{ book_subject[x] }} <br> <a href="{{ document_url[x] }}">More info</a>
-                                        </p>
+                                            : {{ book_subject[x] }} <br>
+                                            <a class="waves-effect waves-light btn blue-grey darken-3"
+                                               href="{{ document_url[x] }}">More Info</a></p>
                                     </div>
-                                    {% if user_type == "admin" %}
-                                        <div class="col s1 right">
-                                        <div class="row">
 
-                                            <a class="btn-floating btn-large waves-effect waves-light blue_grey"
-                                               href="#delete_document_{{ x }}"><i
-                                                    class="material-icons">delete_forever</i></a>
+                                    <div class="col s2 right">
+                                        <div class="row">
+                                            {% if user_type == "admin" %}
+                                                <a class="btn-floating btn-large waves-effect waves-light blue_grey"
+                                                   href="#delete_document_{{ x }}"><i class="material-icons">delete_forever</i></a>
+                                            {% endif %}
                                         </div>
-                                    {% endif %}
                                     </div>
                                 </div>
                         </li>

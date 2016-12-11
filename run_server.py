@@ -2,6 +2,7 @@ import binascii
 import datetime
 import json
 import os
+import subprocess
 import time
 from signal import signal, SIGPIPE, SIG_DFL
 
@@ -17,11 +18,14 @@ timestamp = datetime.datetime.now()
 
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(APP_ROOT, 'static/uploads')
+THUMBS_FOLDER = os.path.join(APP_ROOT, 'static/thumbs')
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'doc', 'docx', 'png', 'jpg', 'ppt', 'pptx'}
 signal(SIGPIPE, SIG_DFL)
 app.config['MONGO_DBNAME'] = 'aniruddh'
 app.config['MONGO_URI'] = 'mongodb://localhost:27017/aniruddh'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['THUMBS_FOLDER'] = THUMBS_FOLDER
+
 mongo = PyMongo(app)
 
 
@@ -115,6 +119,7 @@ def explore():
         book_ids = []
         book_hashes = []
         delete_url = []
+        thumbnail_url = []
 
         find_book_author = books.find({}, {'book_author': True, '_id': False})
         for author in find_book_author:
@@ -156,6 +161,12 @@ def explore():
             doc_url = '/document/%s' % id
             document_url.append(doc_url)
 
+        for x in booklist:
+            id = book_ids[x]
+            thumb_file = '%s.jpg' % id
+            thumb_url = '/static/thumbs/%s' % thumb_file
+            thumbnail_url.append(thumb_url)
+
         total_time = '%.5f seconds' % (time.time() - start_time)
         total_queries = count
 
@@ -166,7 +177,7 @@ def explore():
                                subjinja=subjinja, authlist=authlist, authors_dropdown=authors_dropdown,
                                authjinja=authjinja, book_titles=book_titles, titlerange=titlerange,
                                totalcount=totalcount, total_time=total_time, user=user, total_queries=total_queries,
-                               delete_url=delete_url, user_type=user_type)
+                               delete_url=delete_url, user_type=user_type, thumbnail_url=thumbnail_url)
     return 'Kindly login to view this page'
 
 @app.route('/userlogin', methods=['POST', 'GET'])
@@ -283,15 +294,26 @@ def submit():
                 auth_c = auth_c_tot + 1
                 auth_c_id = str(auth_c)
                 delhash_id = binascii.b2a_hex(os.urandom(15))
+                fname_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                thumb_name = '%s.jpg' % book_id
+                thumb_path = os.path.join(app.config['THUMBS_FOLDER'], thumb_name)
+                thumb_link = '/static/thumbs/%s' % thumb_name
                 download_link = '/downloads/%s' % fname
+                generateThumbnail(fname_path, thumb_path)
                 books.insert({'book_title': book_title, 'filename': fname, 'book_author': book_author,
                               'book_edition': book_edition, 'type': document_type, 'book_subject': subject_name,
                               'book_id': book_id, 'type_id': type_c_id, 'sub_id': sub_c_id, 'book_url': download_link,
-                              'auth_id': auth_c_id, 'uploaded_by': uploader, 'hash_dentifier': delhash_id})
-
+                              'auth_id': auth_c_id, 'uploaded_by': uploader, 'hash_dentifier': delhash_id,
+                              'thumb_url': thumb_link})
         return render_template('submit2.html', sublist=sublist, subjects_dropdown=subjects_dropdown, subjinja=subjinja,
                                authlist=authlist, authors_dropdown=authors_dropdown, authjinja=authjinja)
     return 'Kindly login to perform this action'
+
+
+def generateThumbnail(fname_path, thumb_path):
+    page_one_only = '%s[0]' % fname_path
+    thumbnail_params = ['convert', page_one_only, thumb_path]
+    subprocess.check_call(thumbnail_params)
 
 
 @app.route('/add_sub', methods=['POST', 'GET'])
@@ -404,6 +426,7 @@ def bysub(subid):
     book_ids = []
     book_hashes = []
     delete_url = []
+    thumbnail_url = []
 
     start_time = time.time()
     find_book_author = documents.find({'book_subject': subid}, {'book_author': True, '_id': False})
@@ -446,13 +469,19 @@ def bysub(subid):
         doc_url = '/document/%s' % id
         document_url.append(doc_url)
 
+    for x in booklist:
+        id = book_ids[x]
+        thumb_file = '%s.jpg' % id
+        thumb_url = '/static/thumbs/%s' % thumb_file
+        thumbnail_url.append(thumb_url)
+
     time_taken = '%.5f seconds' % (time.time() - start_time)
     return render_template('bysub.html', book_title=book_title, book_author=book_author, document_url=document_url,
                            booklist=booklist, book_edition=book_edition, book_subject=book_subject,
                            user_fullname=user_fullname, sublist=sublist, subjects_dropdown=subjects_dropdown,
                            subjinja=subjinja, authlist=authlist, authors_dropdown=authors_dropdown, authjinja=authjinja,
                            user=user, total_queries=count, time_taken=time_taken, delete_url=delete_url,
-                           user_type=user_type)
+                           user_type=user_type, thumbnail_url=thumbnail_url)
 
 
 @app.route('/bytype/<typeid>')
@@ -501,6 +530,7 @@ def bytype(typeid):
     book_ids = []
     book_hashes = []
     delete_url = []
+    thumbnail_url = []
 
     start_time = time.time()
     find_book_author = documents.find({'type': typeid}, {'book_author': True, '_id': False})
@@ -543,6 +573,12 @@ def bytype(typeid):
         doc_url = '/document/%s' % id
         document_url.append(doc_url)
 
+    for x in booklist:
+        id = book_ids[x]
+        thumb_file = '%s.jpg' % id
+        thumb_url = '/static/thumbs/%s' % thumb_file
+        thumbnail_url.append(thumb_url)
+
     time_taken = '%.5f seconds' % (time.time() - start_time)
 
     return render_template('bytype.html', book_title=book_title, book_author=book_author, document_url=document_url,
@@ -550,7 +586,7 @@ def bytype(typeid):
                            user_fullname=user_fullname, sublist=sublist, subjects_dropdown=subjects_dropdown,
                            subjinja=subjinja, authlist=authlist, authors_dropdown=authors_dropdown, authjinja=authjinja,
                            user=user, total_queries=count, time_taken=time_taken, delete_url=delete_url,
-                           user_type=user_type)
+                           user_type=user_type, thumbnail_url=thumbnail_url)
 
 
 @app.route('/byauth/<auth>')
@@ -599,6 +635,7 @@ def byauth(auth):
     book_ids = []
     book_hashes = []
     delete_url = []
+    thumbnail_url = []
 
     start_time = time.time()
     find_book_author = documents.find({'book_author': auth}, {'book_author': True, '_id': False})
@@ -641,6 +678,12 @@ def byauth(auth):
         doc_url = '/document/%s' % id
         document_url.append(doc_url)
 
+    for x in booklist:
+        id = book_ids[x]
+        thumb_file = '%s.jpg' % id
+        thumb_url = '/static/thumbs/%s' % thumb_file
+        thumbnail_url.append(thumb_url)
+
     time_taken = '%.5f seconds' % (time.time() - start_time)
 
     return render_template('byauth.html', book_title=book_title, book_author=book_author, document_url=document_url,
@@ -648,7 +691,7 @@ def byauth(auth):
                            user_fullname=user_fullname, sublist=sublist, subjects_dropdown=subjects_dropdown,
                            subjinja=subjinja, authlist=authlist, authors_dropdown=authors_dropdown, authjinja=authjinja,
                            user=user, time_taken=time_taken, total_queries=count, delete_url=delete_url,
-                           user_type=user_type)
+                           user_type=user_type, thumbnail_url=thumbnail_url)
 
 
 def toJson(data):
@@ -709,6 +752,8 @@ def profile(user):
         book_ids = []
         book_hashes = []
         delete_url = []
+        thumbnail_url = []
+
         start_time = time.time()
         find_book_author = books.find({'uploaded_by': user}, {'book_author': True, '_id': False})
         for author in find_book_author:
@@ -750,12 +795,18 @@ def profile(user):
             doc_url = '/document/%s' % id
             document_url.append(doc_url)
 
+        for x in booklist:
+            id = book_ids[x]
+            thumb_file = '%s.jpg' % id
+            thumb_url = '/static/thumbs/%s' % thumb_file
+            thumbnail_url.append(thumb_url)
+
         total_time = '%.5f seconds' % (time.time() - start_time)
         return render_template('profile.html', current_user=current_user, user_email_id=user_email_id,
                                user_fullname=user_fullname, delete_url=delete_url, user_type=user_type,
                                current_user_fullname=current_user_fullname, booklist=booklist, book_author=book_author,
                                book_title=book_title, book_edition=book_edition, book_subject=book_subject,
-                               document_url=document_url, total_time=total_time, user=user)
+                               document_url=document_url, total_time=total_time, user=user, thumbnail_url=thumbnail_url)
     return 'you need to be logged in to perform that action'
 
 
@@ -787,6 +838,7 @@ def query(search_query):
     book_ids = []
     book_hashes = []
     delete_url = []
+    thumbnail_url = []
 
     users = mongo.db.users
     user = session['username']
@@ -846,6 +898,12 @@ def query(search_query):
         doc_url = '/document/%s' % id
         document_url.append(doc_url)
 
+    for x in booklist:
+        id = book_ids[x]
+        thumb_file = '%s.jpg' % id
+        thumb_url = '/static/thumbs/%s' % thumb_file
+        thumbnail_url.append(thumb_url)
+
     time_taken = '%.5f seconds' % (time.time() - start_time)
 
     if request.method == 'POST':
@@ -857,7 +915,7 @@ def query(search_query):
                            book_subject=book_subject, book_edition=book_edition, book_author=book_author,
                            document_url=document_url, user_fullname=user_fullname, time_taken=time_taken,
                            book_titles=book_titles, titlerange=titlerange, totalcount=totalcount, user=user,
-                           result_count=count, delete_url=delete_url, user_type=user_type)
+                           result_count=count, delete_url=delete_url, user_type=user_type, thumbnail_url=thumbnail_url)
 
 
 @app.route('/preferences', methods=['POST', 'GET'])
